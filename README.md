@@ -12,32 +12,47 @@
 
 ---
 
-## 🚀 1. 环境准备与项目构建 (从零开始)
+## 🚀 快速启动 (Quick Start)
 
-如果您需要在本地机器上从头构建此项目，请按照以下步骤操作：
+如果您已经获取了本项目代码，请按以下步骤启动：
 
-### 第一步：初始化 Vite 项目
-打开终端（Terminal），运行以下命令创建一个 React + TypeScript 项目：
+1.  **安装依赖**:
+    ```bash
+    npm install
+    ```
+2.  **启动开发服务器**:
+    ```bash
+    npm run dev
+    ```
+    打开浏览器访问 `http://localhost:5173` 即可预览。
 
+3.  **构建生产版本**:
+    ```bash
+    npm run build
+    ```
+
+---
+
+## 📖 进阶：如何将 Tailwind CSS 切换为本地安装 (Remove CDN)
+
+目前 `index.html` 可能通过 CDN 引入 Tailwind。为了更好的开发体验（智能提示、自定义配置）和生产性能，建议将其下载到本地配置。
+
+**请严格按照以下步骤操作：**
+
+### 1. 安装开发依赖
+在项目根目录下运行：
 ```bash
-npm create vite@latest thcunews-classifier -- --template react-ts
-cd thcunews-classifier
+npm install -D tailwindcss postcss autoprefixer
 ```
 
-### 第二步：安装依赖
-安装项目所需的第三方库：
-
+### 2. 初始化配置文件
+运行以下命令，这会自动创建 `tailwind.config.js` 和 `postcss.config.js`：
 ```bash
-# 安装 UI 相关库
-npm install lucide-react recharts clsx tailwind-merge
-
-# (可选) 如果不使用 CDN，建议本地安装 Tailwind CSS
-npm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
 ```
 
-### 第三步：配置 Tailwind CSS
-修改 `tailwind.config.js` 以支持文件扫描：
+### 3. 修改配置路径
+打开 `tailwind.config.js`，修改 `content` 数组，让 Tailwind 知道去扫描哪些文件：
 
 ```javascript
 /** @type {import('tailwindcss').Config} */
@@ -47,61 +62,71 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      // 可以在此处保留项目自定义的动画配置
+      animation: {
+        blob: "blob 7s infinite",
+        shimmer: "shimmer 2s infinite",
+      },
+      keyframes: {
+        blob: {
+          "0%": { transform: "translate(0px, 0px) scale(1)" },
+          "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+          "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+          "100%": { transform: "translate(0px, 0px) scale(1)" },
+        },
+        shimmer: {
+          "from": { transform: "translateX(-100%)" },
+          "to": { transform: "translateX(100%)" },
+        }
+      }
+    },
   },
   plugins: [],
 }
 ```
 
-并在 `src/index.css` 中添加指令：
+### 4. 创建全局样式入口
+在 `src` 文件夹下新建一个 `index.css` 文件，内容如下：
+
 ```css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 如果需要，可以将 index.html 中的自定义 CSS 移到这里 */
 ```
 
----
-
-## 🏃 2. 启动与打包
-
-### 启动开发服务器
-在项目根目录下运行：
-
-```bash
-npm run dev
-```
-打开浏览器访问 `http://localhost:5173` 即可看到实时预览。
-
-### 构建生产版本
-当准备部署时，运行：
-
-```bash
-npm run build
-```
-该命令会在 `dist` 目录下生成优化后的静态文件，可直接部署到 Nginx、Vercel 或 Netlify。
-
----
-
-## 🔌 3. 核心代码修改指南：对接真实后端
-
-当前项目使用 `mockApi.ts` 模拟后端响应。要对接您部署的 FastAPI (BERT/RoBERTa) 服务，请修改 `src/services/mockApi.ts`。
-
-### 修改步骤
-
-1.  找到 `src/services/mockApi.ts` 文件。
-2.  删除原有的 `setTimeout` 模拟逻辑。
-3.  使用 `fetch` 或 `axios` 发起真实的 HTTP 请求。
-
-### 代码示例
-
-假设您的后端 API 地址为 `http://localhost:8000/predict`，修改后的代码如下：
+### 5. 在代码中引入 CSS
+打开 `src/index.tsx`，在顶部添加导入：
 
 ```typescript
-// src/services/mockApi.ts
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css'; // <--- 新增这一行
+// ...
+```
 
+### 6. 移除 CDN
+打开 `index.html`，删除 `<script src="https://cdn.tailwindcss.com"></script>` 这一行。
+
+完成以上步骤后，重启 `npm run dev`，您就拥有了完整的本地 Tailwind 环境！
+
+---
+
+## 🔌 核心代码修改：如何连接后端
+
+当前前端使用 `src/services/mockApi.ts` 模拟数据返回。要对接真实的 Python (FastAPI/Flask) 后端，请按以下步骤修改代码。
+
+### 1. 修改 API 服务文件
+打开 `src/services/mockApi.ts`，将原有代码替换为真实的 `fetch` 请求：
+
+```typescript
 import { PredictResponse, ModelType } from '../types';
 
-const API_URL = "http://localhost:8000/predict"; // 您的真实后端地址
+// 修改为您的真实后端地址
+const API_URL = "http://localhost:8000/predict"; 
 
 export const mockAnalyze = async (text: string, model: ModelType): Promise<PredictResponse> => {
   try {
@@ -110,60 +135,54 @@ export const mockAnalyze = async (text: string, model: ModelType): Promise<Predi
       headers: {
         'Content-Type': 'application/json',
       },
+      // 构造请求体，字段名需与后端接收模型一致
       body: JSON.stringify({
         text: text,
-        model: model // 传递选中的模型 (BERT 或 RoBERTa)
+        model_name: model // 例如后端可能需要 'model_name' 字段
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      throw new Error(`Server Error: ${response.status}`);
     }
 
     const data = await response.json();
-    
-    // 确保后端返回的数据格式与前端 PredictResponse 接口一致
-    // 如果不一致，在这里进行格式转换
-    return data as PredictResponse;
+    return data as PredictResponse; // 确保后端返回 JSON 结构符合前端类型定义
 
   } catch (error) {
-    console.error("API Request Failed:", error);
-    throw error; // 抛出错误以便 UI 层捕获并提示用户
+    console.error("API Call Failed:", error);
+    throw error; // 抛出错误，让前端 UI 显示错误提示
   }
 };
 ```
 
-### 后端 FastAPI 数据格式要求
-
-为了适配前端展示，您的后端返回 JSON 结构应如下所示（或者在前端手动转换）：
+### 2. 后端数据结构要求
+为了适配前端图表，建议后端返回的 JSON 格式如下：
 
 ```json
 {
-  "category": "财经",
+  "category": "体育",
   "confidence": 0.98,
-  "inference_time_ms": 120,
+  "inference_time_ms": 45,
   "probabilities": [
-    { "name": "财经", "value": 98.2 },
-    { "name": "科技", "value": 1.5 },
-    { "name": "政治", "value": 0.3 }
-    // ... Top 5
+    { "name": "体育", "value": 98.5 },
+    { "name": "娱乐", "value": 1.2 },
+    { "name": "其他", "value": 0.3 }
   ]
 }
 ```
 
-### 跨域问题 (CORS)
-
-由于前端通常运行在 `localhost:5173`，后端在 `localhost:8000`，浏览器会拦截跨域请求。请务必在 **FastAPI** 中配置 CORS：
+### 3. 处理跨域 (CORS)
+由于前端运行在 `localhost:5173`，后端运行在 `localhost:8000`，请务必在 FastAPI 中配置 CORS：
 
 ```python
-# FastAPI backend setup
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # 生产环境建议设置为具体的前端域名
+    allow_origins=["http://localhost:5173"], # 允许前端域
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -172,16 +191,16 @@ app.add_middleware(
 
 ---
 
-## 📂 项目结构说明
+## 📂 核心文件目录
 
 ```
 src/
-├── components/          # UI 组件
-│   ├── InputSection.tsx # 输入框与拖拽逻辑
-│   ├── ResultSection.tsx# 结果展示与图表
-│   └── ui/              # 基础通用组件 (Button 等)
-├── services/            # API 服务层 (在此处修改后端连接)
-├── types.ts             # TypeScript 类型定义
-├── constants.ts         # 常量与示例数据
-└── App.tsx              # 主页面逻辑与布局
+├── components/          
+│   ├── InputSection.tsx  # [核心] 支持拖拽的文件输入区域
+│   ├── ResultSection.tsx # [核心] Recharts 图表展示区
+│   └── ui/               # 通用 UI 组件
+├── services/            
+│   └── mockApi.ts        # [修改点] API 请求逻辑
+├── App.tsx               # 页面主入口，包含 Hero 动画逻辑
+└── types.ts              # TS 类型定义
 ```
